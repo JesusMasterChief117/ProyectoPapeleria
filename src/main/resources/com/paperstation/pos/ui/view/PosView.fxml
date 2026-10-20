@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import com.paperstation.pos.ui.component.CatalogGrid?>
+<?import com.paperstation.pos.ui.component.CheckoutPanel?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Priority?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.SVGPath?>
+
+<BorderPane fx:id="rootPane" prefHeight="800.0" prefWidth="1280.0"
+            styleClass="main-container"
+            xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.paperstation.pos.ui.controller.PosController">
+
+    <!-- HEADER SUPERIOR -->
+    <top>
+        <HBox alignment="CENTER_LEFT" spacing="16.0" styleClass="header-bar">
+            <padding>
+                <Insets bottom="12.0" left="20.0" right="20.0" top="12.0" />
+            </padding>
+            <VBox spacing="2.0">
+                <HBox alignment="CENTER_LEFT" spacing="8.0">
+                    <Label styleClass="header-brand" text="PaperStation" />
+                    <Label styleClass="header-badge" text="POS" />
+                </HBox>
+                <Label styleClass="header-subtitle" text="Terminal 01 · Sucursal Papelería Central" />
+            </VBox>
+
+            <Region HBox.hgrow="ALWAYS" />
+
+            <HBox alignment="CENTER" spacing="12.0" styleClass="header-status-box">
+                <Label styleClass="user-pill" text="Cajero: Admin" />
+                <Label fx:id="lblDateTime" styleClass="clock-label" text="Cargando fecha y hora..." />
+            </HBox>
+        </HBox>
+    </top>
+
+    <!-- CONTENIDO PRINCIPAL: Carrito y Cobro (Izquierda) + Catálogo de Productos (Centro/Derecha) -->
+    <center>
+        <HBox spacing="0.0">
+            <!-- PANEL IZQUIERDO: CheckoutPanel (Carrito y Cobro de fondo #FFFFFF) -->
+            <CheckoutPanel fx:id="checkoutPanel" HBox.hgrow="NEVER" />
+
+            <!-- SECCIÓN CENTRAL Y DERECHA: Navegación Superior + Grilla de Productos (CatalogGrid) -->
+            <VBox spacing="16.0" HBox.hgrow="ALWAYS" styleClass="catalog-workspace">
+                <padding>
+                    <Insets bottom="18.0" left="24.0" right="24.0" top="18.0" />
+                </padding>
+
+                <!-- 1. PANEL SUPERIOR (NAVEGACIÓN): Pestañas trapezoidales de alto contraste + Buscador redondeado -->
+                <VBox spacing="0.0" styleClass="catalog-nav-wrapper">
+                    <HBox alignment="BOTTOM_LEFT" spacing="16.0" styleClass="catalog-top-nav">
+                        <!-- Barra de pestañas (Destacados, Papelería, Cibercafé) -->
+                        <HBox fx:id="categoryBar" alignment="BOTTOM_LEFT" spacing="6.0" styleClass="catalog-tab-bar" />
+
+                        <Region HBox.hgrow="ALWAYS" />
+
+                        <!-- Barra de búsqueda con esquinas completamente redondeadas (Pill) -->
+                        <HBox fx:id="searchPillBox" alignment="CENTER_LEFT" spacing="10.0" styleClass="search-pill-box">
+                            <StackPane styleClass="search-icon-wrapper">
+                                <SVGPath content="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z M21 21l-4.35-4.35"
+                                         styleClass="search-pill-icon" />
+                            </StackPane>
+                            <TextField fx:id="txtSearch"
+                                       onAction="#onSearchAction"
+                                       onKeyTyped="#onSearchTextChanged"
+                                       promptText="Buscar artículo..."
+                                       styleClass="search-pill-field"
+                                       HBox.hgrow="ALWAYS" />
+                            <Button fx:id="btnClearSearch"
+                                    onAction="#onClearSearchAction"
+                                    styleClass="search-clear-btn"
+                                    text="×"
+                                    visible="false"
+                                    managed="false" />
+                        </HBox>
+                    </HBox>
+
+                    <!-- Riel estructural inferior que ancla las pestañas trapezoidales -->
+                    <Region styleClass="catalog-tab-rail" />
+                </VBox>
+
+                <!-- 2. GRILLA DE PRODUCTOS (CatalogGrid: ScrollPane + TilePane responsivo + ProductCardNode) -->
+                <CatalogGrid fx:id="catalogGrid" VBox.vgrow="ALWAYS" />
+            </VBox>
+        </HBox>
+    </center>
+
+    <!-- FOOTER / BARRA DE ESTADO Y ATAJOS -->
+    <bottom>
+        <HBox alignment="CENTER_LEFT" spacing="16.0" styleClass="footer-bar">
+            <padding>
+                <Insets bottom="8.0" left="20.0" right="20.0" top="8.0" />
+            </padding>
+            <Label fx:id="lblStatusMessage" styleClass="status-message" text="Terminal lista para registrar transacciones." />
+            <Region HBox.hgrow="ALWAYS" />
+            <HBox alignment="CENTER_RIGHT" spacing="12.0" styleClass="hotkey-container">
+                <Label styleClass="hotkey-badge" text="[F2] Buscar / Escáner" />
+                <Label styleClass="hotkey-badge" text="[F5] Cancelar" />
+                <Label styleClass="hotkey-badge" text="[F12] Cobrar" />
+            </HBox>
+        </HBox>
+    </bottom>
+</BorderPane>
