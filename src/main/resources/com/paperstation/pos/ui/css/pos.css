@@ -1,0 +1,595 @@
+/* ==========================================================================
+   PaperStation POS — Hoja de Estilos Intencional (JavaFX)
+   ========================================================================== */
+
+.root {
+    -fx-font-family: "Segoe UI", "Inter", -apple-system, sans-serif;
+    -fx-font-size: 13px;
+    -fx-background-color: #F8FAFC;
+}
+
+.main-container {
+    -fx-background-color: #F1F5F9;
+}
+
+/* ==========================================================================
+   1. CHECKOUT PANEL (PANEL IZQUIERDO DE CARRITO Y COBRO - #FFFFFF PURO)
+   ========================================================================== */
+
+.checkout-panel {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #E2E8F0;
+    -fx-border-width: 0 1px 0 0;
+}
+
+/* --- ENCABEZADO DE METADATOS (ORDEN · CAJA · FECHA) --- */
+.checkout-order-header {
+    -fx-background-color: #FFFFFF;
+}
+
+.meta-order-id {
+    -fx-font-size: 14px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #0F172A;
+}
+
+.meta-register {
+    -fx-font-size: 13px;
+    -fx-font-weight: 500;
+    -fx-text-fill: #475569;
+}
+
+.meta-date {
+    -fx-font-size: 12.5px;
+    -fx-font-weight: 400;
+    -fx-text-fill: #64748B;
+}
+
+.meta-item-count {
+    -fx-font-size: 12px;
+    -fx-font-weight: 600;
+    -fx-text-fill: #475569;
+}
+
+.checkout-divider-h {
+    -fx-background-color: #E2E8F0;
+}
+
+.checkout-divider-v {
+    -fx-background-color: #CBD5E1;
+}
+
+/* --- TABLA REACTIVA DE PARTIDAS --- */
+.checkout-table {
+    -fx-background-color: #FFFFFF;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+    -fx-border-width: 0;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+
+.checkout-table .column-header-background {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #E2E8F0;
+    -fx-border-width: 0 0 1px 0;
+}
+
+.checkout-table .column-header {
+    -fx-background-color: transparent;
+    -fx-border-width: 0;
+    -fx-padding: 10px 12px;
+}
+
+.checkout-table .column-header .label {
+    -fx-text-fill: #64748B;
+    -fx-font-size: 12px;
+    -fx-font-weight: 600;
+    -fx-alignment: CENTER_LEFT;
+}
+
+.checkout-table .filler {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #E2E8F0;
+    -fx-border-width: 0 0 1px 0;
+}
+
+.checkout-table .virtual-flow .clipped-container .sheet .table-row-cell {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #F1F5F9;
+    -fx-border-width: 0 0 1px 0;
+}
+
+.checkout-table .table-row-cell:empty {
+    -fx-background-color: #FFFFFF;
+    -fx-border-width: 0;
+}
+
+.checkout-table .table-row-cell:hover {
+    -fx-background-color: #F8FAFC;
+}
+
+.checkout-table .table-row-cell:selected {
+    -fx-background-color: #F1F5F9;
+}
+
+.checkout-table .table-cell {
+    -fx-border-width: 0;
+    -fx-padding: 0 12px;
+    -fx-text-fill: #0F172A;
+}
+
+.cell-product-name {
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+    -fx-text-fill: #0F172A;
+}
+
+.cell-qty-value {
+    -fx-font-size: 13px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #0F172A;
+    -fx-min-width: 22px;
+    -fx-alignment: CENTER;
+}
+
+.qty-step-btn {
+    -fx-background-color: #F1F5F9;
+    -fx-text-fill: #334155;
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+    -fx-padding: 2px 7px;
+    -fx-background-radius: 4px;
+    -fx-border-width: 0;
+    -fx-cursor: hand;
+}
+
+.qty-step-btn:hover {
+    -fx-background-color: #E2E8F0;
+    -fx-text-fill: #0F172A;
+}
+
+.cell-unit-price {
+    -fx-font-size: 12.5px;
+    -fx-font-weight: 500;
+    -fx-text-fill: #64748B;
+}
+
+.cell-line-total {
+    -fx-font-size: 13.5px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #0F172A;
+}
+
+.cell-remove-btn {
+    -fx-background-color: transparent;
+    -fx-text-fill: #94A3B8;
+    -fx-font-size: 15px;
+    -fx-font-weight: 700;
+    -fx-padding: 0 4px;
+    -fx-cursor: hand;
+}
+
+.cell-remove-btn:hover {
+    -fx-text-fill: #E11D48;
+}
+
+/* --- ESTADO VACÍO DEL CARRITO --- */
+.checkout-empty-state {
+    -fx-background-color: #FFFFFF;
+}
+
+.checkout-empty-icon-holder {
+    -fx-background-color: #F8FAFC;
+    -fx-background-radius: 26px;
+}
+
+.checkout-empty-title {
+    -fx-font-size: 15px;
+    -fx-font-weight: 600;
+    -fx-text-fill: #334155;
+}
+
+.checkout-empty-subtitle {
+    -fx-font-size: 12.5px;
+    -fx-font-weight: 400;
+    -fx-text-fill: #94A3B8;
+    -fx-text-alignment: CENTER;
+    -fx-max-width: 260px;
+}
+
+/* --- RESUMEN FINANCIERO Y ESCALA TIPOGRÁFICA --- */
+.checkout-footer-section {
+    -fx-background-color: #FFFFFF;
+}
+
+.checkout-summary-label {
+    -fx-font-size: 13px;
+    -fx-font-weight: 400;
+    -fx-text-fill: #64748B;
+}
+
+.checkout-summary-value {
+    -fx-font-size: 13.5px;
+    -fx-font-weight: 600;
+    -fx-text-fill: #334155;
+}
+
+.checkout-total-label {
+    -fx-font-size: 16px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #0F172A;
+}
+
+.checkout-total-amount {
+    -fx-font-size: 28px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #0F172A;
+}
+
+/* --- HBOX INFERIOR DE 5 BOTONES DE ACCIÓN --- */
+.checkout-actions-bar {
+    -fx-padding: 2px 0 0 0;
+}
+
+.pos-action-btn {
+    -fx-font-size: 12.5px;
+    -fx-font-weight: 600;
+    -fx-text-fill: #FFFFFF;
+    -fx-padding: 11px 11px;
+    -fx-background-radius: 6px;
+    -fx-border-width: 0;
+    -fx-cursor: hand;
+}
+
+.pos-action-btn:disabled {
+    -fx-opacity: 0.42;
+    -fx-cursor: default;
+}
+
+/* Naranja para Cancelar */
+.pos-btn-cancel {
+    -fx-background-color: #EA580C;
+}
+
+.pos-btn-cancel:hover {
+    -fx-background-color: #C2410C;
+}
+
+/* Azul oscuro para utilidades (Espera, Descuento, Ticket) */
+.pos-btn-utility {
+    -fx-background-color: #1E293B;
+}
+
+.pos-btn-utility:hover {
+    -fx-background-color: #0F172A;
+}
+
+/* Rojo/Coral para Cobrar */
+.pos-btn-charge {
+    -fx-background-color: #E11D48;
+    -fx-font-size: 13.5px;
+    -fx-font-weight: 700;
+}
+
+.pos-btn-charge:hover {
+    -fx-background-color: #BE123C;
+}
+
+/* ==========================================================================
+   2. HEADER GLOBAL DE LA TERMINAL
+   ========================================================================== */
+
+.header-bar {
+    -fx-background-color: #0F172A;
+    -fx-border-color: #1E293B;
+    -fx-border-width: 0 0 1px 0;
+}
+
+.header-brand {
+    -fx-text-fill: #F8FAFC;
+    -fx-font-size: 19px;
+    -fx-font-weight: 700;
+}
+
+.header-badge {
+    -fx-background-color: #E11D48;
+    -fx-text-fill: #FFFFFF;
+    -fx-font-size: 10px;
+    -fx-font-weight: 700;
+    -fx-padding: 2px 7px;
+    -fx-background-radius: 4px;
+}
+
+.header-subtitle {
+    -fx-text-fill: #94A3B8;
+    -fx-font-size: 11.5px;
+}
+
+.user-pill {
+    -fx-background-color: #1E293B;
+    -fx-text-fill: #E2E8F0;
+    -fx-font-size: 12px;
+    -fx-padding: 5px 12px;
+    -fx-background-radius: 6px;
+}
+
+.clock-label {
+    -fx-text-fill: #CBD5E1;
+    -fx-font-size: 12px;
+    -fx-font-weight: 500;
+}
+
+/* ==========================================================================
+   3. SECCIÓN CENTRAL Y DERECHA: NAVEGACIÓN SUPERIOR Y CATÁLOGO DE PRODUCTOS
+   ========================================================================== */
+
+.catalog-workspace {
+    -fx-background-color: #F1F5F9;
+}
+
+.catalog-nav-wrapper {
+    -fx-background-color: transparent;
+}
+
+.catalog-top-nav {
+    -fx-padding: 0 0 0 0;
+}
+
+.catalog-tab-bar {
+    -fx-padding: 0;
+}
+
+/* Pestañas trapezoidales / asimétricas de alto contraste (inspiradas en separadores de archivo) */
+.catalog-tab {
+    -fx-shape: "M 0,40 L 6,4 Q 8,0 14,0 L 130,0 Q 137,0 141,6 L 156,40 Z";
+    -fx-scale-shape: true;
+    -fx-background-color: #0F172A;
+    -fx-background-insets: 0;
+    -fx-text-fill: #CBD5E1;
+    -fx-font-size: 13.5px;
+    -fx-font-weight: 700;
+    -fx-padding: 10px 28px 9px 22px;
+    -fx-cursor: hand;
+}
+
+.catalog-tab:hover {
+    -fx-background-color: #1E293B;
+    -fx-text-fill: #FFFFFF;
+}
+
+/* Pestaña activa destacada en rojo de alto contraste */
+.catalog-tab-active,
+.catalog-tab-active:hover {
+    -fx-background-color: #E11D48;
+    -fx-text-fill: #FFFFFF;
+}
+
+/* Riel inferior que ancla visualmente las pestañas trapezoidales */
+.catalog-tab-rail {
+    -fx-background-color: #E11D48;
+    -fx-min-height: 2.5px;
+    -fx-pref-height: 2.5px;
+    -fx-max-height: 2.5px;
+}
+
+/* Barra de búsqueda con esquinas completamente redondeadas (Pill) */
+.search-pill-box {
+    -fx-background-color: #FFFFFF;
+    -fx-background-radius: 999px;
+    -fx-border-color: #CBD5E1;
+    -fx-border-radius: 999px;
+    -fx-border-width: 1.5px;
+    -fx-padding: 6px 14px 6px 16px;
+    -fx-min-width: 270px;
+    -fx-pref-width: 320px;
+    -fx-max-height: 38px;
+    -fx-translate-y: -5px;
+}
+
+.search-pill-box:hover,
+.search-pill-box-focused {
+    -fx-border-color: #0F172A;
+    -fx-background-color: #FFFFFF;
+}
+
+.search-icon-wrapper {
+    -fx-min-width: 18px;
+    -fx-pref-width: 18px;
+}
+
+.search-pill-icon {
+    -fx-fill: transparent;
+    -fx-stroke: #64748B;
+    -fx-stroke-width: 2;
+    -fx-scale-x: 0.78;
+    -fx-scale-y: 0.78;
+}
+
+.search-pill-field {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 2px 0;
+    -fx-font-size: 13.5px;
+    -fx-font-weight: 500;
+    -fx-text-fill: #0F172A;
+    -fx-prompt-text-fill: #94A3B8;
+    -fx-border-width: 0;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+
+.search-clear-btn {
+    -fx-background-color: #F1F5F9;
+    -fx-background-radius: 999px;
+    -fx-text-fill: #475569;
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+    -fx-padding: 1px 6px;
+    -fx-min-width: 20px;
+    -fx-min-height: 20px;
+    -fx-cursor: hand;
+}
+
+.search-clear-btn:hover {
+    -fx-background-color: #E2E8F0;
+    -fx-text-fill: #0F172A;
+}
+
+/* ==========================================================================
+   4. GRILLA DE PRODUCTOS (CatalogGrid + ProductCardNode)
+   ========================================================================== */
+
+.catalog-grid-scroll {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+    -fx-padding: 0;
+}
+
+.catalog-grid-scroll > .viewport {
+    -fx-background-color: transparent;
+}
+
+.catalog-grid-scroll .scroll-bar:vertical {
+    -fx-background-color: transparent;
+    -fx-pref-width: 8px;
+}
+
+.catalog-grid-scroll .scroll-bar:vertical .track {
+    -fx-background-color: transparent;
+}
+
+.catalog-grid-scroll .scroll-bar:vertical .thumb {
+    -fx-background-color: #CBD5E1;
+    -fx-background-radius: 999px;
+}
+
+.catalog-grid-scroll .scroll-bar:vertical .thumb:hover {
+    -fx-background-color: #94A3B8;
+}
+
+.catalog-grid-scroll .scroll-bar:vertical .increment-button,
+.catalog-grid-scroll .scroll-bar:vertical .decrement-button {
+    -fx-padding: 0;
+    -fx-pref-height: 0;
+    -fx-opacity: 0;
+}
+
+.catalog-tile-pane {
+    -fx-background-color: transparent;
+}
+
+/* Tarjeta de producto (ProductCardNode): bloque blanco con bordes de 12px */
+.product-card-node {
+    -fx-background-color: #FFFFFF;
+    -fx-background-radius: 12px;
+    -fx-border-color: rgba(226, 232, 240, 0.9);
+    -fx-border-radius: 12px;
+    -fx-border-width: 1px;
+}
+
+.product-card-node:hover {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #CBD5E1;
+}
+
+.product-card-icon-badge {
+    -fx-background-color: #F1F5F9;
+    -fx-background-radius: 8px;
+}
+
+.product-card-icon-badge-cyber {
+    -fx-background-color: #FFF1F2;
+    -fx-background-radius: 8px;
+}
+
+.product-card-sku {
+    -fx-font-size: 11px;
+    -fx-font-weight: 600;
+    -fx-text-fill: #94A3B8;
+}
+
+/* Tipografía en la tarjeta: Nombre en negrita y subtítulo descriptivo más pequeño */
+.product-card-title {
+    -fx-font-size: 14px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #0F172A;
+    -fx-line-spacing: 1px;
+}
+
+.product-card-subtitle {
+    -fx-font-size: 12px;
+    -fx-font-weight: 400;
+    -fx-text-fill: #64748B;
+}
+
+.product-card-price {
+    -fx-font-size: 17px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #0F172A;
+}
+
+/* Botón circular oscuro (+) en la esquina inferior derecha */
+.product-card-add-btn {
+    -fx-background-color: #0F172A;
+    -fx-background-radius: 999px;
+    -fx-border-radius: 999px;
+    -fx-padding: 0;
+    -fx-cursor: hand;
+}
+
+.product-card-add-btn:hover {
+    -fx-background-color: #E11D48;
+}
+
+.product-card-add-btn:pressed {
+    -fx-background-color: #BE123C;
+}
+
+/* Estado vacío de búsqueda en el catálogo */
+.catalog-empty-state {
+    -fx-background-color: transparent;
+}
+
+.catalog-empty-icon {
+    -fx-background-color: #E2E8F0;
+    -fx-background-radius: 999px;
+}
+
+.catalog-empty-title {
+    -fx-font-size: 15px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #334155;
+}
+
+.catalog-empty-subtitle {
+    -fx-font-size: 12.5px;
+    -fx-font-weight: 400;
+    -fx-text-fill: #64748B;
+    -fx-text-alignment: CENTER;
+    -fx-max-width: 340px;
+}
+
+/* --- FOOTER / BARRA DE ESTADO --- */
+.footer-bar {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #E2E8F0;
+    -fx-border-width: 1px 0 0 0;
+}
+
+.status-message {
+    -fx-text-fill: #475569;
+    -fx-font-size: 12px;
+}
+
+.hotkey-badge {
+    -fx-background-color: #F8FAFC;
+    -fx-text-fill: #475569;
+    -fx-font-size: 11px;
+    -fx-padding: 3px 8px;
+    -fx-background-radius: 4px;
+    -fx-border-color: #E2E8F0;
+    -fx-border-radius: 4px;
+}

@@ -1,0 +1,664 @@
+/* ==========================================================================
+   PaperStation POS — Sistema de Diseño UI & Hoja de Estilos Global (pos-theme.css)
+   Arquitectura Visual Intencional para Terminal de Punto de Venta (JavaFX)
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. PALETA BASE Y TOKENS SEMÁNTICOS (Variables CSS JavaFX / Looked-up Colors)
+   Revisión contra frontend-design:
+   - Se eliminan los grises/neutros genéricos de plantilla en favor de la
+     paleta corporativa definida en el brief.
+   - El contraste cromático entre el lienzo de catálogo (#1E60B5) y el panel
+     operativo de cobro/tarjetas (#FFFFFF) separa cognitivamente la exploración
+     de inventario del registro contable de la transacción.
+   -------------------------------------------------------------------------- */
+.root {
+    /* Superficies principales del brief */
+    -pos-bg-catalog: #1E60B5;          /* Fondo de catálogo: Azul corporativo vibrante */
+    -pos-bg-catalog-deep: #154B91;     /* Tono profundo de soporte para contenedores del catálogo */
+    -pos-bg-surface: #FFFFFF;          /* Fondo de carrito, recibo y tarjetas: Blanco puro */
+    -pos-bg-surface-subtle: #F4F7FB;   /* Superficie secundaria teñida con el azul de marca (no gris neutro) */
+
+    /* Tokens de botones de acción del brief */
+    -pos-action-cancel: #E65A28;       /* Cancelación / Acción destructiva controlada */
+    -pos-action-cancel-hover: #CC4B1D;
+    -pos-action-cancel-pressed: #B23E14;
+
+    -pos-action-charge: #D83244;       /* Cobro / Cierre de transacción primario */
+    -pos-action-charge-hover: #BE2435;
+    -pos-action-charge-pressed: #A31B2A;
+
+    -pos-action-tool: #164282;         /* Herramientas / Utilidades operativas (Espera, Descuento, Ticket) */
+    -pos-action-tool-hover: #0F3163;
+    -pos-action-tool-pressed: #0A2246;
+
+    /* Tinta y jerarquía tipográfica (anclada en azul marino profundo, nunca gris genérico) */
+    -pos-ink-primary: #0C2340;
+    -pos-ink-secondary: #35527A;
+    -pos-ink-muted: #6882A6;
+    -pos-ink-on-brand: #FFFFFF;
+    -pos-ink-on-brand-muted: #CFE0F7;
+
+    /* Estructura visual e información (bordes y divisores intencionales) */
+    -pos-border-structural: #D6E2F0;
+    -pos-border-strong: #B8CBE3;
+    -pos-border-focus: #164282;
+    -pos-border-card-hover: #164282;
+
+    /* Sobrescritura de variables internas de JavaFX (Modena) para erradicar el focus ring por defecto */
+    -fx-base: -pos-bg-surface;
+    -fx-background: -pos-bg-surface;
+    -fx-control-inner-background: -pos-bg-surface;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+    -fx-accent: -pos-bg-catalog;
+
+    /* ----------------------------------------------------------------------
+       2. TIPOGRAFÍA GLOBAL
+       - Fuente limpia, sin serifas y moderna para lectura rápida de precios y SKUs.
+       - Sin transformaciones "all caps" predeterminadas.
+       ---------------------------------------------------------------------- */
+    -fx-font-family: "Inter", "Segoe UI", "Roboto", -apple-system, sans-serif;
+    -fx-font-size: 13px;
+    -fx-text-fill: -pos-ink-primary;
+}
+
+/* Asegurar que ninguna etiqueta o botón aplique mayúsculas forzadas ni estilos heredados */
+.label,
+.button,
+.toggle-button,
+.table-column {
+    -fx-font-family: "Inter", "Segoe UI", "Roboto", -apple-system, sans-serif;
+}
+
+.main-container {
+    -fx-background-color: -pos-bg-catalog;
+}
+
+/* ==========================================================================
+   3. ENCABEZADO SUPERIOR Y BARRA DE ESTADO (ESTRUCTURA INFORMATIVA)
+   ========================================================================== */
+
+.header-bar {
+    -fx-background-color: -pos-action-tool;
+    -fx-border-color: -pos-bg-catalog-deep;
+    -fx-border-width: 0 0 1px 0;
+}
+
+.header-brand {
+    -fx-text-fill: -pos-ink-on-brand;
+    -fx-font-size: 19px;
+    -fx-font-weight: 700;
+}
+
+/* Encabezado estructural explícito: único distintivo de terminal en mayúsculas por jerarquía */
+.header-badge {
+    -fx-background-color: -pos-bg-catalog;
+    -fx-text-fill: -pos-ink-on-brand;
+    -fx-font-size: 10.5px;
+    -fx-font-weight: 700;
+    -fx-padding: 2px 8px;
+    -fx-background-radius: 4px;
+    -fx-border-color: -pos-ink-on-brand-muted;
+    -fx-border-width: 1px;
+    -fx-border-radius: 4px;
+}
+
+.header-subtitle {
+    -fx-text-fill: -pos-ink-on-brand-muted;
+    -fx-font-size: 12px;
+    -fx-font-weight: 400;
+}
+
+.user-pill {
+    -fx-background-color: -pos-bg-catalog;
+    -fx-text-fill: -pos-ink-on-brand;
+    -fx-font-size: 12px;
+    -fx-font-weight: 600;
+    -fx-padding: 5px 12px;
+    -fx-background-radius: 5px;
+}
+
+.clock-label {
+    -fx-text-fill: -pos-ink-on-brand-muted;
+    -fx-font-size: 12px;
+    -fx-font-weight: 500;
+}
+
+/* ==========================================================================
+   4. ÁREA DE CATÁLOGO (FONDO AZUL CORPORATIVO VIBRANTE #1E60B5)
+   ========================================================================== */
+
+.catalog-workspace {
+    -fx-background-color: -pos-bg-catalog;
+}
+
+/* --------------------------------------------------------------------------
+   Redefinición del TextField de Búsqueda:
+   - Elimina por completo el brillo azul de foco nativo de JavaFX (focus ring).
+   - Lo reemplaza por un borde sutil, nítido e intencional que comunica foco activo.
+   -------------------------------------------------------------------------- */
+.text-field {
+    -fx-background-color: -pos-bg-surface;
+    -fx-background-insets: 0;
+    -fx-background-radius: 6px;
+    -fx-border-color: -pos-border-structural;
+    -fx-border-insets: 0;
+    -fx-border-radius: 6px;
+    -fx-border-width: 1px;
+    -fx-text-fill: -pos-ink-primary;
+    -fx-prompt-text-fill: -pos-ink-muted;
+    -fx-highlight-fill: -pos-bg-catalog;
+    -fx-highlight-text-fill: -pos-ink-on-brand;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+    -fx-padding: 7px 11px;
+}
+
+.text-field:focused {
+    -fx-background-color: -pos-bg-surface;
+    -fx-background-insets: 0;
+    -fx-border-color: -pos-border-focus;
+    -fx-border-width: 1.5px;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+
+/* Contenedor compuesto del escáner/buscador en el catálogo */
+.search-box {
+    -fx-background-color: -pos-bg-surface;
+    -fx-background-radius: 6px;
+    -fx-border-color: -pos-action-tool;
+    -fx-border-radius: 6px;
+    -fx-border-width: 1px;
+    -fx-padding: 5px 8px 5px 12px;
+}
+
+.search-field,
+.search-field:focused {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-font-size: 13.5px;
+    -fx-font-weight: 500;
+    -fx-text-fill: -pos-ink-primary;
+    -fx-prompt-text-fill: -pos-ink-muted;
+    -fx-border-color: transparent transparent -pos-border-structural transparent;
+    -fx-border-width: 0 0 1px 0;
+    -fx-border-radius: 0;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+    -fx-padding: 6px 4px;
+}
+
+.search-field:focused {
+    -fx-border-color: transparent transparent -pos-border-focus transparent;
+    -fx-border-width: 0 0 1.5px 0;
+}
+
+.btn-search-action {
+    -fx-background-color: -pos-action-tool;
+    -fx-text-fill: -pos-ink-on-brand;
+    -fx-font-size: 12.5px;
+    -fx-font-weight: 600;
+    -fx-padding: 7px 16px;
+    -fx-background-radius: 5px;
+    -fx-cursor: hand;
+    -fx-transition: -fx-background-color 140ms ease-out, -fx-scale-x 100ms ease-out, -fx-scale-y 100ms ease-out;
+}
+
+.btn-search-action:hover {
+    -fx-background-color: -pos-action-tool-hover;
+}
+
+.btn-search-action:pressed {
+    -fx-background-color: -pos-action-tool-pressed;
+    -fx-scale-x: 0.98;
+    -fx-scale-y: 0.98;
+}
+
+/* --------------------------------------------------------------------------
+   Barra de Categorías / Filtros de Inventario
+   -------------------------------------------------------------------------- */
+.categories-scroll {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+    -fx-border-width: 0;
+}
+
+.categories-scroll > .viewport {
+    -fx-background-color: transparent;
+}
+
+.category-bar-inner {
+    -fx-background-color: transparent;
+}
+
+.category-chip {
+    -fx-background-color: -pos-action-tool;
+    -fx-text-fill: -pos-ink-on-brand-muted;
+    -fx-font-size: 12.5px;
+    -fx-font-weight: 600;
+    -fx-padding: 6px 14px;
+    -fx-background-radius: 5px;
+    -fx-border-color: -pos-bg-catalog-deep;
+    -fx-border-radius: 5px;
+    -fx-border-width: 1px;
+    -fx-cursor: hand;
+    -fx-transition: -fx-background-color 140ms ease-out, -fx-border-color 140ms ease-out;
+}
+
+.category-chip:hover {
+    -fx-background-color: -pos-action-tool-hover;
+    -fx-text-fill: -pos-ink-on-brand;
+    -fx-border-color: -pos-ink-on-brand-muted;
+}
+
+.category-chip-active,
+.category-chip-active:hover {
+    -fx-background-color: -pos-bg-surface;
+    -fx-text-fill: -pos-action-tool;
+    -fx-border-color: -pos-bg-surface;
+    -fx-font-weight: 700;
+}
+
+/* --------------------------------------------------------------------------
+   Cuadrícula y Tarjetas de Producto (Blanco Puro #FFFFFF sobre #1E60B5)
+   Transiciones suaves únicamente ante interacción directa (hover / clic).
+   -------------------------------------------------------------------------- */
+.catalog-scroll {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+    -fx-border-color: transparent;
+}
+
+.catalog-scroll > .viewport {
+    -fx-background-color: transparent;
+}
+
+.catalog-flow-pane {
+    -fx-background-color: transparent;
+}
+
+.product-card {
+    -fx-background-color: -pos-bg-surface;
+    -fx-background-radius: 6px;
+    -fx-border-color: -pos-action-tool;
+    -fx-border-radius: 6px;
+    -fx-border-width: 1px;
+    -fx-padding: 12px 14px;
+    -fx-pref-width: 195px;
+    -fx-cursor: hand;
+    -fx-transition: -fx-border-color 140ms ease-out, -fx-translate-y 120ms ease-out, -fx-scale-x 90ms ease-out, -fx-scale-y 90ms ease-out;
+}
+
+.product-card:hover {
+    -fx-background-color: -pos-bg-surface;
+    -fx-border-color: -pos-action-cancel;
+    -fx-translate-y: -1.5px;
+}
+
+.product-card:pressed {
+    -fx-background-color: -pos-bg-surface-subtle;
+    -fx-border-color: -pos-action-tool;
+    -fx-translate-y: 0px;
+    -fx-scale-x: 0.985;
+    -fx-scale-y: 0.985;
+}
+
+/* Etiqueta de categoría en tarjeta: capitalización natural, sin "all caps" artificial */
+.product-card-category {
+    -fx-font-size: 11px;
+    -fx-text-fill: -pos-ink-secondary;
+    -fx-font-weight: 600;
+}
+
+.product-card-name {
+    -fx-font-size: 13px;
+    -fx-font-weight: 700;
+    -fx-text-fill: -pos-ink-primary;
+    -fx-pref-height: 38px;
+}
+
+.product-card-price {
+    -fx-font-size: 15.5px;
+    -fx-font-weight: 800;
+    -fx-text-fill: -pos-action-tool;
+}
+
+.product-card-stock {
+    -fx-font-size: 11px;
+    -fx-font-weight: 600;
+    -fx-text-fill: -pos-ink-muted;
+}
+
+/* ==========================================================================
+   5. PANEL DE CARRITO Y COBRO (FONDO BLANCO PURO #FFFFFF)
+   ========================================================================== */
+
+.checkout-panel {
+    -fx-background-color: -pos-bg-surface;
+    -fx-border-color: -pos-action-tool;
+    -fx-border-width: 0 2px 0 0;
+}
+
+/* --- Encabezado de Metadatos (Orden · Caja · Fecha) --- */
+.checkout-order-header {
+    -fx-background-color: -pos-bg-surface;
+}
+
+.meta-order-id {
+    -fx-font-size: 14px;
+    -fx-font-weight: 700;
+    -fx-text-fill: -pos-ink-primary;
+}
+
+.meta-register {
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+    -fx-text-fill: -pos-ink-secondary;
+}
+
+.meta-date {
+    -fx-font-size: 12.5px;
+    -fx-font-weight: 400;
+    -fx-text-fill: -pos-ink-muted;
+}
+
+.meta-item-count {
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+    -fx-text-fill: -pos-action-tool;
+}
+
+/* Divisores estructurales: codifican límites de sección sin decorar de más */
+.checkout-divider-h {
+    -fx-background-color: -pos-border-structural;
+}
+
+.checkout-divider-v {
+    -fx-background-color: -pos-border-strong;
+}
+
+/* --- Tabla Reactiva de Partidas --- */
+.checkout-table {
+    -fx-background-color: -pos-bg-surface;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+    -fx-border-width: 0;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+
+.checkout-table .column-header-background {
+    -fx-background-color: -pos-bg-surface-subtle;
+    -fx-border-color: -pos-border-structural;
+    -fx-border-width: 0 0 1px 0;
+}
+
+.checkout-table .column-header {
+    -fx-background-color: transparent;
+    -fx-border-width: 0;
+    -fx-padding: 10px 12px;
+}
+
+/* Encabezados de tabla sin "all caps": legibilidad limpia y directa */
+.checkout-table .column-header .label {
+    -fx-text-fill: -pos-ink-secondary;
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+    -fx-alignment: CENTER_LEFT;
+}
+
+.checkout-table .filler {
+    -fx-background-color: -pos-bg-surface-subtle;
+    -fx-border-color: -pos-border-structural;
+    -fx-border-width: 0 0 1px 0;
+}
+
+.checkout-table .virtual-flow .clipped-container .sheet .table-row-cell {
+    -fx-background-color: -pos-bg-surface;
+    -fx-border-color: -pos-border-structural;
+    -fx-border-width: 0 0 1px 0;
+}
+
+.checkout-table .table-row-cell:empty {
+    -fx-background-color: -pos-bg-surface;
+    -fx-border-width: 0;
+}
+
+.checkout-table .table-row-cell:hover {
+    -fx-background-color: -pos-bg-surface-subtle;
+}
+
+.checkout-table .table-row-cell:selected {
+    -fx-background-color: #E6EFFA;
+}
+
+.checkout-table .table-cell {
+    -fx-border-width: 0;
+    -fx-padding: 0 12px;
+    -fx-text-fill: -pos-ink-primary;
+}
+
+.cell-product-name {
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+    -fx-text-fill: -pos-ink-primary;
+}
+
+.cell-qty-value {
+    -fx-font-size: 13px;
+    -fx-font-weight: 700;
+    -fx-text-fill: -pos-ink-primary;
+    -fx-min-width: 22px;
+    -fx-alignment: CENTER;
+}
+
+.qty-step-btn {
+    -fx-background-color: -pos-bg-surface-subtle;
+    -fx-text-fill: -pos-action-tool;
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+    -fx-padding: 2px 7px;
+    -fx-background-radius: 4px;
+    -fx-border-color: -pos-border-structural;
+    -fx-border-radius: 4px;
+    -fx-border-width: 1px;
+    -fx-cursor: hand;
+    -fx-transition: -fx-background-color 120ms ease-out, -fx-text-fill 120ms ease-out;
+}
+
+.qty-step-btn:hover {
+    -fx-background-color: -pos-action-tool;
+    -fx-text-fill: -pos-ink-on-brand;
+    -fx-border-color: -pos-action-tool;
+}
+
+.cell-unit-price {
+    -fx-font-size: 12.5px;
+    -fx-font-weight: 500;
+    -fx-text-fill: -pos-ink-secondary;
+}
+
+.cell-line-total {
+    -fx-font-size: 13.5px;
+    -fx-font-weight: 700;
+    -fx-text-fill: -pos-ink-primary;
+}
+
+.cell-remove-btn {
+    -fx-background-color: transparent;
+    -fx-text-fill: -pos-ink-muted;
+    -fx-font-size: 15px;
+    -fx-font-weight: 700;
+    -fx-padding: 0 4px;
+    -fx-cursor: hand;
+    -fx-transition: -fx-text-fill 120ms ease-out;
+}
+
+.cell-remove-btn:hover {
+    -fx-text-fill: -pos-action-charge;
+}
+
+/* --- Estado Vacío del Carrito --- */
+.checkout-empty-state {
+    -fx-background-color: -pos-bg-surface;
+}
+
+.checkout-empty-icon-holder {
+    -fx-background-color: -pos-bg-surface-subtle;
+    -fx-background-radius: 26px;
+}
+
+.checkout-empty-title {
+    -fx-font-size: 15px;
+    -fx-font-weight: 700;
+    -fx-text-fill: -pos-ink-primary;
+}
+
+.checkout-empty-subtitle {
+    -fx-font-size: 12.5px;
+    -fx-font-weight: 400;
+    -fx-text-fill: -pos-ink-secondary;
+    -fx-text-alignment: CENTER;
+    -fx-max-width: 260px;
+}
+
+/* --- Resumen Financiero y Escala Tipográfica --- */
+.checkout-footer-section {
+    -fx-background-color: -pos-bg-surface;
+}
+
+.checkout-summary-label {
+    -fx-font-size: 13px;
+    -fx-font-weight: 500;
+    -fx-text-fill: -pos-ink-secondary;
+}
+
+.checkout-summary-value {
+    -fx-font-size: 13.5px;
+    -fx-font-weight: 600;
+    -fx-text-fill: -pos-ink-primary;
+}
+
+.checkout-total-label {
+    -fx-font-size: 16px;
+    -fx-font-weight: 700;
+    -fx-text-fill: -pos-ink-primary;
+}
+
+.checkout-total-amount {
+    -fx-font-size: 28px;
+    -fx-font-weight: 800;
+    -fx-text-fill: -pos-ink-primary;
+}
+
+/* ==========================================================================
+   6. BOTONES DE ACCIÓN DEL POS (TOKENS SEMÁNTICOS Y TRANSICIONES INTENCIONALES)
+   - Cancelación: #E65A28
+   - Herramientas (Espera, Descuento, Ticket): #164282
+   - Cobro: #D83244
+   ========================================================================== */
+
+.checkout-actions-bar {
+    -fx-padding: 2px 0 0 0;
+}
+
+.pos-action-btn {
+    -fx-font-size: 12.5px;
+    -fx-font-weight: 600;
+    -fx-text-fill: -pos-ink-on-brand;
+    -fx-padding: 11px 11px;
+    -fx-background-radius: 6px;
+    -fx-border-width: 0;
+    -fx-cursor: hand;
+    -fx-transition: -fx-background-color 140ms ease-out, -fx-scale-x 90ms ease-out, -fx-scale-y 90ms ease-out;
+}
+
+.pos-action-btn:pressed {
+    -fx-scale-x: 0.97;
+    -fx-scale-y: 0.97;
+}
+
+.pos-action-btn:disabled {
+    -fx-opacity: 0.42;
+    -fx-cursor: default;
+}
+
+/* Token de Cancelación (#E65A28) */
+.pos-btn-cancel,
+.btn-cancel {
+    -fx-background-color: -pos-action-cancel;
+}
+
+.pos-btn-cancel:hover,
+.btn-cancel:hover {
+    -fx-background-color: -pos-action-cancel-hover;
+}
+
+.pos-btn-cancel:pressed,
+.btn-cancel:pressed {
+    -fx-background-color: -pos-action-cancel-pressed;
+}
+
+/* Token de Herramientas Operativas (#164282) */
+.pos-btn-utility,
+.btn-tool {
+    -fx-background-color: -pos-action-tool;
+}
+
+.pos-btn-utility:hover,
+.btn-tool:hover {
+    -fx-background-color: -pos-action-tool-hover;
+}
+
+.pos-btn-utility:pressed,
+.btn-tool:pressed {
+    -fx-background-color: -pos-action-tool-pressed;
+}
+
+/* Token de Cobro (#D83244) */
+.pos-btn-charge,
+.btn-charge {
+    -fx-background-color: -pos-action-charge;
+    -fx-font-size: 13.5px;
+    -fx-font-weight: 700;
+}
+
+.pos-btn-charge:hover,
+.btn-charge:hover {
+    -fx-background-color: -pos-action-charge-hover;
+}
+
+.pos-btn-charge:pressed,
+.btn-charge:pressed {
+    -fx-background-color: -pos-action-charge-pressed;
+}
+
+/* ==========================================================================
+   7. PIE DE VENTANA / BARRA DE ESTADO Y ATAJOS
+   ========================================================================== */
+
+.footer-bar {
+    -fx-background-color: -pos-bg-surface;
+    -fx-border-color: -pos-border-structural;
+    -fx-border-width: 1px 0 0 0;
+}
+
+.status-message {
+    -fx-text-fill: -pos-ink-secondary;
+    -fx-font-size: 12px;
+    -fx-font-weight: 500;
+}
+
+.hotkey-badge {
+    -fx-background-color: -pos-bg-surface-subtle;
+    -fx-text-fill: -pos-action-tool;
+    -fx-font-size: 11px;
+    -fx-font-weight: 600;
+    -fx-padding: 3px 8px;
+    -fx-background-radius: 4px;
+    -fx-border-color: -pos-border-structural;
+    -fx-border-radius: 4px;
+    -fx-border-width: 1px;
+}
