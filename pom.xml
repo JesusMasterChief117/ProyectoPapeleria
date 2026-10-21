@@ -80,9 +80,6 @@
                 <version>${javafx.plugin.version}</version>
                 <configuration>
                     <mainClass>com.paperstation.pos.MainLauncher</mainClass>
-                    <options>
-                        <option>--enable-preview</option>
-                    </options>
                 </configuration>
             </plugin>
 

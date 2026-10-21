@@ -1,5 +1,9 @@
-# Maven build output
+# Maven / Gradle build output and compiled binaries
 target/
+build/
+*.class
+*.jar
+*.war
 
 # IDE metadata
 .idea/
@@ -9,3 +13,4 @@ target/
 # OS generated files
 .DS_Store
 Thumbs.db
+
