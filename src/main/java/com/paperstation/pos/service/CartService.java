@@ -92,20 +92,37 @@ public final class CartService {
 
     private final ReadOnlyIntegerWrapper itemCount = new ReadOnlyIntegerWrapper(this, "itemCount");
     private final ReadOnlyBooleanWrapper empty = new ReadOnlyBooleanWrapper(this, "empty");
+    private final ReadOnlyBooleanWrapper hasParkedOrder = new ReadOnlyBooleanWrapper(this, "hasParkedOrder", false);
+    private final ReadOnlyIntegerWrapper currentOrderSequence = new ReadOnlyIntegerWrapper(this, "currentOrderSequence", 104);
+
+    // ---------------------------------------------------------------- estado de orden en espera
+
+    private record ParkedCartSnapshot(List<OrderItem> items, DiscountPolicy discountPolicy) {}
+    private ParkedCartSnapshot parkedCart;
 
     // ---------------------------------------------------------------- infraestructura
 
     private final Clock clock;
     private final Supplier<String> orderIdGenerator;
+    private boolean updatingQuantityGuard = false;
 
     /**
      * Protege la invariante {@code 1 <= cantidad <= MAX} incluso si alguien escribe directamente
      * en {@link CartItem#quantity()} sin pasar por el servicio: el valor inválido se revierte.
      */
     private final ChangeListener<Number> quantityGuard = (obs, oldVal, newVal) -> {
+        if (updatingQuantityGuard) {
+            return;
+        }
         int value = newVal.intValue();
         if (value < 1 || value > MAX_QUANTITY_PER_ITEM) {
-            ((IntegerProperty) obs).set(oldVal.intValue());
+            updatingQuantityGuard = true;
+            try {
+                int fallback = Math.clamp(oldVal.intValue(), 1, MAX_QUANTITY_PER_ITEM);
+                ((IntegerProperty) obs).set(fallback);
+            } finally {
+                updatingQuantityGuard = false;
+            }
         }
     };
 
@@ -126,10 +143,22 @@ public final class CartService {
 
         totals.bind(Bindings.createObjectBinding(this::computeTotals, items, discountPolicy));
 
-        subtotal.bind(Bindings.createDoubleBinding(() -> totals.get().subtotal().doubleValue(), totals));
-        discount.bind(Bindings.createDoubleBinding(() -> totals.get().discount().doubleValue(), totals));
-        tax.bind(Bindings.createDoubleBinding(() -> totals.get().tax().doubleValue(), totals));
-        total.bind(Bindings.createDoubleBinding(() -> totals.get().total().doubleValue(), totals));
+        subtotal.bind(Bindings.createDoubleBinding(() -> {
+            CartTotals t = totals.get();
+            return t != null ? t.subtotal().doubleValue() : 0.0;
+        }, totals));
+        discount.bind(Bindings.createDoubleBinding(() -> {
+            CartTotals t = totals.get();
+            return t != null ? t.discount().doubleValue() : 0.0;
+        }, totals));
+        tax.bind(Bindings.createDoubleBinding(() -> {
+            CartTotals t = totals.get();
+            return t != null ? t.tax().doubleValue() : 0.0;
+        }, totals));
+        total.bind(Bindings.createDoubleBinding(() -> {
+            CartTotals t = totals.get();
+            return t != null ? t.total().doubleValue() : 0.0;
+        }, totals));
 
         itemCount.bind(Bindings.createIntegerBinding(
                 () -> items.stream().mapToInt(CartItem::getQuantity).sum(), items));
@@ -229,9 +258,45 @@ public final class CartService {
     }
 
     /**
-     * Confirma la venta: congela las líneas en un {@link Order} inmutable y vacía el carrito.
-     * Obtén {@link #getTotals()} <em>antes</em> de llamar a este método si necesitas los
-     * importes con descuento para el ticket.
+     * Estaciona (pone en espera) la orden actual junto con su política de descuento
+     * y limpia el carrito activo.
+     *
+     * @return número de partidas estacionadas, o {@code 0} si el carrito estaba vacío
+     */
+    public int parkCurrentOrder() {
+        if (items.isEmpty()) {
+            return 0;
+        }
+        List<OrderItem> snapshot = items.stream().map(OrderItem::from).toList();
+        parkedCart = new ParkedCartSnapshot(snapshot, discountPolicy.get());
+        hasParkedOrder.set(true);
+        clearCart();
+        return snapshot.size();
+    }
+
+    /**
+     * Recupera la orden en espera hacia el carrito activo, restaurando también su descuento.
+     *
+     * @return {@code true} si existía una orden en espera y fue restaurada
+     */
+    public boolean restoreParkedOrder() {
+        if (parkedCart == null || parkedCart.items().isEmpty()) {
+            return false;
+        }
+        ParkedCartSnapshot snapshot = parkedCart;
+        parkedCart = null;
+        hasParkedOrder.set(false);
+
+        for (OrderItem item : snapshot.items()) {
+            addProduct(item.product(), item.quantity());
+        }
+        applyDiscount(snapshot.discountPolicy());
+        return true;
+    }
+
+    /**
+     * Confirma la venta: congela las líneas y los totales exactos en un {@link Order} inmutable,
+     * incrementa la secuencia de orden y vacía el carrito.
      *
      * @throws IllegalStateException si el carrito está vacío
      */
@@ -239,9 +304,11 @@ public final class CartService {
         if (items.isEmpty()) {
             throw new IllegalStateException("No se puede cobrar un carrito vacío");
         }
+        CartTotals frozenTotals = getTotals();
         List<OrderItem> snapshot = items.stream().map(OrderItem::from).toList();
-        Order order = new Order(orderIdGenerator.get(), cashierName, LocalDateTime.now(clock), snapshot);
+        Order order = new Order(orderIdGenerator.get(), cashierName, LocalDateTime.now(clock), snapshot, frozenTotals);
         clearCart();
+        currentOrderSequence.set(currentOrderSequence.get() + 1);
         return order;
     }
 
@@ -297,12 +364,23 @@ public final class CartService {
         return empty.getReadOnlyProperty();
     }
 
+    public ReadOnlyBooleanProperty hasParkedOrderProperty() {
+        return hasParkedOrder.getReadOnlyProperty();
+    }
+
+    public ReadOnlyIntegerProperty currentOrderSequenceProperty() {
+        return currentOrderSequence.getReadOnlyProperty();
+    }
+
     public double getSubtotal() { return subtotal.get(); }
     public double getDiscount() { return discount.get(); }
     public double getTax() { return tax.get(); }
     public double getTotal() { return total.get(); }
     public int getItemCount() { return itemCount.get(); }
+    public int getLineCount() { return items.size(); }
     public boolean isEmpty() { return empty.get(); }
+    public boolean hasParkedOrder() { return hasParkedOrder.get(); }
+    public int getCurrentOrderSequence() { return currentOrderSequence.get(); }
 
     // ================================================================ internos
 

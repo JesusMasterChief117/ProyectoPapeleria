@@ -1,5 +1,8 @@
 package com.paperstation.pos.model;
 
+import com.paperstation.pos.service.CartService;
+import com.paperstation.pos.service.CartTotals;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
@@ -16,12 +19,14 @@ import java.util.Objects;
  * @param cashierName nombre del cajero que realizó el cobro
  * @param date        fecha y hora de la venta
  * @param items       líneas vendidas (no vacía)
+ * @param totals      instantánea exacta de los importes (subtotal, descuento, IVA y total) al cobrar
  */
 public record Order(
         String orderId,
         String cashierName,
         LocalDateTime date,
-        List<OrderItem> items
+        List<OrderItem> items,
+        CartTotals totals
 ) {
 
     public Order {
@@ -41,14 +46,41 @@ public record Order(
         }
 
         items = List.copyOf(items); // inmutable + rechaza elementos null
+        if (totals == null) {
+            BigDecimal sub = items.stream()
+                    .map(OrderItem::lineTotal)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add)
+                    .setScale(Product.MONEY_SCALE, RoundingMode.HALF_UP);
+            BigDecimal disc = BigDecimal.ZERO.setScale(Product.MONEY_SCALE, RoundingMode.HALF_UP);
+            BigDecimal iva = sub.multiply(CartService.IVA_RATE).setScale(Product.MONEY_SCALE, RoundingMode.HALF_UP);
+            BigDecimal tot = sub.add(iva).setScale(Product.MONEY_SCALE, RoundingMode.HALF_UP);
+            totals = new CartTotals(sub, disc, iva, tot);
+        }
+    }
+
+    /** Constructor de compatibilidad sin desglose explícito de totales (asume descuento cero). */
+    public Order(String orderId, String cashierName, LocalDateTime date, List<OrderItem> items) {
+        this(orderId, cashierName, date, items, null);
     }
 
     /** Suma de importes de línea antes de descuentos e impuestos. */
     public BigDecimal subtotal() {
-        return items.stream()
-                .map(OrderItem::lineTotal)
-                .reduce(BigDecimal.ZERO, BigDecimal::add)
-                .setScale(Product.MONEY_SCALE, RoundingMode.HALF_UP);
+        return totals.subtotal();
+    }
+
+    /** Monto de descuento aplicado a la venta. */
+    public BigDecimal discount() {
+        return totals.discount();
+    }
+
+    /** Impuesto (IVA) calculado en la venta. */
+    public BigDecimal tax() {
+        return totals.tax();
+    }
+
+    /** Importe total final cobrado en la venta. */
+    public BigDecimal total() {
+        return totals.total();
     }
 
     /** Total de unidades vendidas. */
