@@ -5,28 +5,33 @@ import com.paperstation.pos.model.Order;
 import com.paperstation.pos.service.CartService;
 import com.paperstation.pos.service.CartTotals;
 import com.paperstation.pos.service.DiscountPolicy;
+import com.paperstation.pos.service.ReceiptFormatter;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
+import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.value.ChangeListener;
 import javafx.collections.ListChangeListener;
+import javafx.concurrent.Task;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
 import javafx.scene.shape.SVGPath;
 import javafx.scene.shape.StrokeLineCap;
 import javafx.scene.shape.StrokeLineJoin;
-import javafx.scene.paint.Color;
 import javafx.util.Duration;
 
 import java.math.BigDecimal;
-import java.text.NumberFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 /**
@@ -40,13 +45,14 @@ import java.util.function.Consumer;
  */
 public class CheckoutPanel extends VBox {
 
-    private static final NumberFormat CURRENCY_FORMAT = NumberFormat.getCurrencyInstance(Locale.of("es", "MX"));
     private static final DateTimeFormatter ORDER_DATE_FORMAT =
             DateTimeFormatter.ofPattern("dd MMM yyyy · HH:mm", Locale.of("es", "MX"));
 
+    private final ReceiptFormatter receiptFormatter = new ReceiptFormatter();
+    private final ExecutorService asyncExecutor = Executors.newVirtualThreadPerTaskExecutor();
+
     private CartService cartService;
-    private int orderSequence = 104;
-    private final List<CartItem> parkedOrder = new ArrayList<>();
+    private Timeline headerClock;
 
     // Metadatos del encabezado
     private final Label lblOrderNumber = new Label();
@@ -61,7 +67,7 @@ public class CheckoutPanel extends VBox {
     private final TableColumn<CartItem, CartItem> colSubtotal = new TableColumn<>("Importe");
 
     // Resumen financiero
-    private final Label lblItemsSummary = new Label("0 artículos");
+    private final Label lblItemsSummary = new Label("0 partidas");
     private final Label lblSubtotalValue = new Label("$0.00");
     private final Label lblDiscountValue = new Label("$0.00");
     private final Label lblTaxValue = new Label("$0.00");
@@ -74,17 +80,25 @@ public class CheckoutPanel extends VBox {
     private final Button btnTicket = new Button("Ticket");
     private final Button btnCharge = new Button("Cobrar");
 
+    // Listeners almacenados como referencias para desregistrarlos limpiamente y evitar fugas de memoria
+    private final ChangeListener<CartTotals> totalsListener = (obs, oldVal, newVal) -> refreshSummaryState();
+    private final ListChangeListener<CartItem> itemsListener = change -> refreshSummaryState();
+    private final ChangeListener<Boolean> parkedOrderListener = (obs, oldVal, hasParked) -> {
+        btnHold.setText(Boolean.TRUE.equals(hasParked) ? "Recuperar" : "Espera");
+        refreshSummaryState();
+    };
+    private final ChangeListener<Number> orderSequenceListener = (obs, oldVal, newVal) -> updateOrderNumberLabel();
+
     private Consumer<String> statusConsumer = msg -> {};
     private Runnable afterActionFocusCallback = () -> {};
     private String cashierName = "Admin";
 
     public CheckoutPanel() {
-        this(new CartService());
+        this(null);
     }
 
     public CheckoutPanel(CartService cartService) {
         getStyleClass().add("checkout-panel");
-        setStyle("-fx-background-color: #FFFFFF;");
         setPrefWidth(460.0);
         setMinWidth(410.0);
         setMaxWidth(520.0);
@@ -107,7 +121,11 @@ public class CheckoutPanel extends VBox {
         );
 
         initHeaderClock();
-        bindCartService(cartService);
+        if (cartService != null) {
+            bindCartService(cartService);
+        } else {
+            updateOrderNumberLabel();
+        }
     }
 
     /**
@@ -120,7 +138,6 @@ public class CheckoutPanel extends VBox {
         header.setPadding(new Insets(16.0, 20.0, 14.0, 20.0));
         header.getStyleClass().add("checkout-order-header");
 
-        updateOrderNumberLabel();
         lblOrderNumber.getStyleClass().add("meta-order-id");
 
         Region divider1 = createVerticalDivider();
@@ -166,6 +183,13 @@ public class CheckoutPanel extends VBox {
         colProduct.setPrefWidth(185.0);
         colProduct.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getProductName()));
         colProduct.setCellFactory(col -> new TableCell<>() {
+            private final Label lbl = new Label();
+
+            {
+                lbl.getStyleClass().add("cell-product-name");
+                setAlignment(Pos.CENTER_LEFT);
+            }
+
             @Override
             protected void updateItem(String name, boolean empty) {
                 super.updateItem(name, empty);
@@ -173,20 +197,18 @@ public class CheckoutPanel extends VBox {
                     setText(null);
                     setGraphic(null);
                 } else {
-                    Label lbl = new Label(name);
-                    lbl.getStyleClass().add("cell-product-name");
+                    lbl.setText(name);
                     setGraphic(lbl);
                     setText(null);
-                    setAlignment(Pos.CENTER_LEFT);
                 }
             }
         });
 
-        // Columna: Cantidad con ajuste rápido (- qty +)
+        // Columna: Cantidad con ajuste rápido (- qty +) enlazada reactivamente a item.quantity()
         colQty.setMinWidth(82.0);
         colQty.setMaxWidth(90.0);
         colQty.setPrefWidth(84.0);
-        colQty.setCellValueFactory(data -> new javafx.beans.property.SimpleObjectProperty<>(data.getValue()));
+        colQty.setCellValueFactory(data -> new SimpleObjectProperty<>(data.getValue()));
         colQty.setCellFactory(col -> new TableCell<>() {
             private final Button btnMinus = new Button("−");
             private final Label lblQty = new Label();
@@ -198,17 +220,26 @@ public class CheckoutPanel extends VBox {
                 btnMinus.getStyleClass().add("qty-step-btn");
                 btnPlus.getStyleClass().add("qty-step-btn");
                 lblQty.getStyleClass().add("cell-qty-value");
+                setAlignment(Pos.CENTER);
 
                 btnMinus.setOnAction(e -> {
                     CartItem item = getItem();
                     if (item != null && cartService != null) {
-                        cartService.updateQuantity(item, item.getQuantity() - 1);
+                        try {
+                            cartService.updateQuantity(item, item.getQuantity() - 1);
+                        } catch (IllegalArgumentException ex) {
+                            statusConsumer.accept(ex.getMessage());
+                        }
                     }
                 });
                 btnPlus.setOnAction(e -> {
                     CartItem item = getItem();
                     if (item != null && cartService != null) {
-                        cartService.updateQuantity(item, item.getQuantity() + 1);
+                        try {
+                            cartService.updateQuantity(item, item.getQuantity() + 1);
+                        } catch (IllegalArgumentException ex) {
+                            statusConsumer.accept(ex.getMessage());
+                        }
                     }
                 });
             }
@@ -216,41 +247,40 @@ public class CheckoutPanel extends VBox {
             @Override
             protected void updateItem(CartItem item, boolean empty) {
                 super.updateItem(item, empty);
+                lblQty.textProperty().unbind();
                 if (empty || item == null) {
                     setGraphic(null);
                 } else {
-                    lblQty.setText(String.valueOf(item.getQuantity()));
+                    lblQty.textProperty().bind(item.quantity().asString());
                     setGraphic(stepper);
-                    setAlignment(Pos.CENTER);
                 }
             }
         });
 
-        // Columna: Precio Unitario
+        // Columna: Precio Unitario (clase CSS añadida una sola vez en el bloque inicializador)
         colUnitPrice.setMinWidth(70.0);
         colUnitPrice.setMaxWidth(85.0);
         colUnitPrice.setPrefWidth(76.0);
         colUnitPrice.setCellValueFactory(data ->
-                new SimpleStringProperty(CURRENCY_FORMAT.format(data.getValue().getUnitPrice())));
+                new SimpleStringProperty(ReceiptFormatter.formatCurrency(data.getValue().getUnitPrice())));
         colUnitPrice.setCellFactory(col -> new TableCell<>() {
+            {
+                getStyleClass().add("cell-unit-price");
+                setAlignment(Pos.CENTER_RIGHT);
+            }
+
             @Override
             protected void updateItem(String price, boolean empty) {
                 super.updateItem(price, empty);
-                if (empty || price == null) {
-                    setText(null);
-                } else {
-                    setText(price);
-                    getStyleClass().add("cell-unit-price");
-                    setAlignment(Pos.CENTER_RIGHT);
-                }
+                setText(empty || price == null ? null : price);
             }
         });
 
-        // Columna: Importe + botón sutil de quitar partida
+        // Columna: Importe reactivo + botón sutil de quitar partida
         colSubtotal.setMinWidth(95.0);
         colSubtotal.setMaxWidth(115.0);
         colSubtotal.setPrefWidth(102.0);
-        colSubtotal.setCellValueFactory(data -> new javafx.beans.property.SimpleObjectProperty<>(data.getValue()));
+        colSubtotal.setCellValueFactory(data -> new SimpleObjectProperty<>(data.getValue()));
         colSubtotal.setCellFactory(col -> new TableCell<>() {
             private final Label lblLineTotal = new Label();
             private final Button btnDelete = new Button("×");
@@ -262,6 +292,8 @@ public class CheckoutPanel extends VBox {
                 box.setAlignment(Pos.CENTER_RIGHT);
                 lblLineTotal.getStyleClass().add("cell-line-total");
                 btnDelete.getStyleClass().add("cell-remove-btn");
+                setAlignment(Pos.CENTER_RIGHT);
+
                 btnDelete.setOnAction(e -> {
                     CartItem item = getItem();
                     if (item != null && cartService != null) {
@@ -274,12 +306,15 @@ public class CheckoutPanel extends VBox {
             @Override
             protected void updateItem(CartItem item, boolean empty) {
                 super.updateItem(item, empty);
+                lblLineTotal.textProperty().unbind();
                 if (empty || item == null) {
                     setGraphic(null);
                 } else {
-                    lblLineTotal.setText(CURRENCY_FORMAT.format(item.getTotal()));
+                    lblLineTotal.textProperty().bind(Bindings.createStringBinding(
+                            () -> ReceiptFormatter.formatCurrency(item.getTotal()),
+                            item.quantity()
+                    ));
                     setGraphic(box);
-                    setAlignment(Pos.CENTER_RIGHT);
                 }
             }
         });
@@ -287,7 +322,7 @@ public class CheckoutPanel extends VBox {
         cartTable.getColumns().setAll(colProduct, colQty, colUnitPrice, colSubtotal);
 
         VBox wrapper = new VBox(cartTable);
-        wrapper.setStyle("-fx-background-color: #FFFFFF;");
+        wrapper.getStyleClass().add("checkout-table-wrapper");
         return wrapper;
     }
 
@@ -300,7 +335,6 @@ public class CheckoutPanel extends VBox {
         emptyState.setPadding(new Insets(36.0, 28.0, 36.0, 28.0));
         emptyState.getStyleClass().add("checkout-empty-state");
 
-        // Ícono vectorial claro de carrito / bandeja de compra
         SVGPath cartOutline = new SVGPath();
         cartOutline.setContent("M3 4h2l2.4 12.2a2 2 0 0 0 2 1.6h9.8a2 2 0 0 0 2-1.6L23 7H6.2 M10 21a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z M19 21a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z");
         cartOutline.setFill(Color.TRANSPARENT);
@@ -337,7 +371,6 @@ public class CheckoutPanel extends VBox {
         container.setPadding(new Insets(16.0, 20.0, 20.0, 20.0));
         container.getStyleClass().add("checkout-footer-section");
 
-        // Desglose financiero
         VBox breakdown = new VBox(7.0);
 
         HBox rowSubtotal = createBreakdownRow("Subtotal", lblSubtotalValue);
@@ -348,7 +381,6 @@ public class CheckoutPanel extends VBox {
 
         Region totalDivider = createHorizontalDivider();
 
-        // Renglón principal: Total con el mayor peso visual del panel
         HBox rowTotal = new HBox();
         rowTotal.setAlignment(Pos.BASELINE_LEFT);
         rowTotal.setPadding(new Insets(4.0, 0, 2.0, 0));
@@ -363,7 +395,6 @@ public class CheckoutPanel extends VBox {
 
         rowTotal.getChildren().addAll(lblTotalHeading, totalSpacer, lblTotalValue);
 
-        // Barra inferior con los 5 botones de acción
         HBox actionsBar = buildActionsBar();
 
         container.getChildren().addAll(breakdown, totalDivider, rowTotal, actionsBar);
@@ -391,14 +422,10 @@ public class CheckoutPanel extends VBox {
         bar.setAlignment(Pos.CENTER_LEFT);
         bar.getStyleClass().add("checkout-actions-bar");
 
-        // Color semántico sin decoraciones innecesarias:
-        // Naranja para Cancelar
         btnCancel.getStyleClass().addAll("pos-action-btn", "pos-btn-cancel");
-        // Azul oscuro para utilidades (Espera, Descuento, Ticket)
         btnHold.getStyleClass().addAll("pos-action-btn", "pos-btn-utility");
         btnDiscount.getStyleClass().addAll("pos-action-btn", "pos-btn-utility");
         btnTicket.getStyleClass().addAll("pos-action-btn", "pos-btn-utility");
-        // Rojo/Coral para Cobrar
         btnCharge.getStyleClass().addAll("pos-action-btn", "pos-btn-charge");
 
         HBox.setHgrow(btnCharge, Priority.ALWAYS);
@@ -415,53 +442,72 @@ public class CheckoutPanel extends VBox {
     }
 
     /**
-     * Enlaza el panel reactivamente a la instancia de {@link CartService}.
+     * Enlaza el panel reactivamente a la instancia de {@link CartService},
+     * desregistrando previamente cualquier listener anterior para evitar fugas de memoria.
      */
     public void bindCartService(CartService service) {
+        unbindCurrentCartService();
         if (service == null) return;
         this.cartService = service;
 
         cartTable.setItems(cartService.getItems());
 
-        // Un único listener sobre la instantánea exacta (BigDecimal) de totales del servicio.
-        cartService.totalsProperty().addListener((obs, oldVal, newVal) -> refreshSummaryState());
+        cartService.totalsProperty().addListener(totalsListener);
+        cartService.getItems().addListener(itemsListener);
+        cartService.hasParkedOrderProperty().addListener(parkedOrderListener);
+        cartService.currentOrderSequenceProperty().addListener(orderSequenceListener);
 
-        cartService.getItems().addListener((ListChangeListener<CartItem>) change -> {
-            refreshSummaryState();
-            cartTable.refresh();
-        });
-
+        btnHold.setText(cartService.hasParkedOrder() ? "Recuperar" : "Espera");
+        updateOrderNumberLabel();
         refreshSummaryState();
+    }
+
+    private void unbindCurrentCartService() {
+        if (this.cartService != null) {
+            this.cartService.totalsProperty().removeListener(totalsListener);
+            this.cartService.getItems().removeListener(itemsListener);
+            this.cartService.hasParkedOrderProperty().removeListener(parkedOrderListener);
+            this.cartService.currentOrderSequenceProperty().removeListener(orderSequenceListener);
+        }
     }
 
     private void refreshSummaryState() {
         if (cartService == null) return;
+        int lineCount = cartService.getLineCount();
         int totalUnits = cartService.getItemCount();
-        lblItemsSummary.setText(totalUnits + (totalUnits == 1 ? " partida" : " partidas"));
+        if (lineCount == 0) {
+            lblItemsSummary.setText("0 partidas");
+        } else {
+            lblItemsSummary.setText(lineCount + (lineCount == 1 ? " partida" : " partidas")
+                    + " (" + totalUnits + (totalUnits == 1 ? " ud." : " uds.") + ")");
+        }
 
         CartTotals totals = cartService.getTotals();
-        lblSubtotalValue.setText(CURRENCY_FORMAT.format(totals.subtotal()));
-        BigDecimal disc = totals.discount();
-        lblDiscountValue.setText(disc.signum() > 0
-                ? "−" + CURRENCY_FORMAT.format(disc)
-                : CURRENCY_FORMAT.format(BigDecimal.ZERO));
-        lblTaxValue.setText(CURRENCY_FORMAT.format(totals.tax()));
-        lblTotalValue.setText(CURRENCY_FORMAT.format(totals.total()));
+        if (totals != null) {
+            lblSubtotalValue.setText(ReceiptFormatter.formatCurrency(totals.subtotal()));
+            BigDecimal disc = totals.discount();
+            lblDiscountValue.setText(disc.signum() > 0
+                    ? "−" + ReceiptFormatter.formatCurrency(disc)
+                    : ReceiptFormatter.formatCurrency(BigDecimal.ZERO));
+            lblTaxValue.setText(ReceiptFormatter.formatCurrency(totals.tax()));
+            lblTotalValue.setText(ReceiptFormatter.formatCurrency(totals.total()));
+        }
 
         boolean empty = cartService.isEmpty();
         btnCancel.setDisable(empty);
         btnDiscount.setDisable(empty);
         btnTicket.setDisable(empty);
         btnCharge.setDisable(empty);
-        btnHold.setDisable(empty && parkedOrder.isEmpty());
+        btnHold.setDisable(empty && !cartService.hasParkedOrder());
     }
 
     public void handleCancelAction() {
         if (cartService == null || cartService.getItems().isEmpty()) return;
 
+        int seq = cartService.getCurrentOrderSequence();
         Alert confirm = new Alert(
                 Alert.AlertType.CONFIRMATION,
-                "¿Cancelar la orden #" + String.format("%05d", orderSequence) + " y vaciar las partidas?",
+                "¿Cancelar la orden #" + String.format("%05d", seq) + " y vaciar las partidas?",
                 ButtonType.YES,
                 ButtonType.NO
         );
@@ -479,21 +525,16 @@ public class CheckoutPanel extends VBox {
     public void handleHoldAction() {
         if (cartService == null) return;
 
-        if (!cartService.getItems().isEmpty()) {
-            parkedOrder.clear();
-            parkedOrder.addAll(cartService.getItems());
-            cartService.clearCart();
-            btnHold.setText("Recuperar");
-            refreshSummaryState();
-            statusConsumer.accept("Orden puesta en espera (" + parkedOrder.size() + " partidas).");
-        } else if (!parkedOrder.isEmpty()) {
-            for (CartItem item : parkedOrder) {
-                cartService.addProduct(item.product(), item.getQuantity());
+        try {
+            if (!cartService.isEmpty()) {
+                int parkedCount = cartService.parkCurrentOrder();
+                statusConsumer.accept("Orden puesta en espera (" + parkedCount + " partidas).");
+            } else if (cartService.hasParkedOrder()) {
+                cartService.restoreParkedOrder();
+                statusConsumer.accept("Orden en espera recuperada con su descuento.");
             }
-            parkedOrder.clear();
-            btnHold.setText("Espera");
-            refreshSummaryState();
-            statusConsumer.accept("Orden en espera recuperada.");
+        } catch (IllegalArgumentException ex) {
+            statusConsumer.accept("Error al recuperar orden en espera: " + ex.getMessage());
         }
         afterActionFocusCallback.run();
     }
@@ -510,7 +551,7 @@ public class CheckoutPanel extends VBox {
                 BigDecimal pct = new BigDecimal(input.trim());
                 cartService.applyDiscount(DiscountPolicy.percentage(pct));
                 statusConsumer.accept("Descuento del " + pct + "% aplicado.");
-            } catch (IllegalArgumentException ex) { // incluye NumberFormatException y rango 0–100
+            } catch (IllegalArgumentException ex) {
                 statusConsumer.accept("Porcentaje inválido.");
             }
             afterActionFocusCallback.run();
@@ -520,62 +561,89 @@ public class CheckoutPanel extends VBox {
     public void handleTicketPreviewAction() {
         if (cartService == null || cartService.getItems().isEmpty()) return;
 
-        StringBuilder receipt = new StringBuilder();
-        receipt.append("PaperStation POS · ").append(lblRegisterId.getText()).append("\n");
-        receipt.append(lblOrderNumber.getText()).append("   ").append(lblOrderDate.getText()).append("\n");
-        receipt.append("----------------------------------------\n");
-        for (CartItem item : cartService.getItems()) {
-            receipt.append(String.format("%dx %-22s %10s%n",
-                    item.getQuantity(),
-                    item.getProductName().length() > 22 ? item.getProductName().substring(0, 22) : item.getProductName(),
-                    CURRENCY_FORMAT.format(item.getTotal())));
-        }
-        receipt.append("----------------------------------------\n");
-        receipt.append("Subtotal: ").append(lblSubtotalValue.getText()).append("\n");
-        receipt.append("Descuento: ").append(lblDiscountValue.getText()).append("\n");
-        receipt.append("IVA (16%): ").append(lblTaxValue.getText()).append("\n");
-        receipt.append("TOTAL: ").append(lblTotalValue.getText());
+        String registerId = lblRegisterId.getText();
+        String orderNumberText = lblOrderNumber.getText();
+        LocalDateTime now = LocalDateTime.now();
+        var itemsSnapshot = cartService.getItems().stream().toList();
+        CartTotals totalsSnapshot = cartService.getTotals();
 
-        Alert ticketDialog = new Alert(Alert.AlertType.INFORMATION);
-        ticketDialog.setTitle("Vista Previa de Ticket");
-        ticketDialog.setHeaderText("Pre-ticket · " + lblOrderNumber.getText());
-        ticketDialog.setContentText(receipt.toString());
-        ticketDialog.showAndWait();
-        afterActionFocusCallback.run();
+        Task<String> previewTask = new Task<>() {
+            @Override
+            protected String call() {
+                return receiptFormatter.formatPreTicket(registerId, orderNumberText, now, itemsSnapshot, totalsSnapshot);
+            }
+        };
+
+        previewTask.setOnSucceeded(e -> Platform.runLater(() -> {
+            Alert ticketDialog = new Alert(Alert.AlertType.INFORMATION);
+            ticketDialog.setTitle("Vista Previa de Ticket");
+            ticketDialog.setHeaderText("Pre-ticket · " + orderNumberText);
+            ticketDialog.setContentText(previewTask.getValue());
+            ticketDialog.showAndWait();
+            afterActionFocusCallback.run();
+        }));
+
+        previewTask.setOnFailed(e -> Platform.runLater(() ->
+                statusConsumer.accept("Error al generar vista previa del ticket.")));
+
+        asyncExecutor.submit(previewTask);
     }
 
     public void handleChargeAction() {
         if (cartService == null || cartService.getItems().isEmpty()) return;
 
-        String chargedAmount = CURRENCY_FORMAT.format(cartService.getTotals().total());
-        int currentOrder = orderSequence;
-
-        // checkout() congela las partidas en un Order inmutable y vacía el carrito.
+        int currentOrder = cartService.getCurrentOrderSequence();
         Order order = cartService.checkout(cashierName);
+        String chargedAmount = ReceiptFormatter.formatCurrency(order.total());
+        String registerId = lblRegisterId.getText();
 
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Cobro Registrado");
-        alert.setHeaderText("Orden #" + String.format("%05d", currentOrder) + " cobrada exitosamente");
-        alert.setContentText("Folio: " + order.orderId() + "\nImporte total recibido: " + chargedAmount);
-        alert.showAndWait();
+        Task<String> receiptTask = new Task<>() {
+            @Override
+            protected String call() {
+                return receiptFormatter.formatOrderReceipt(registerId, order);
+            }
+        };
 
-        orderSequence++;
-        updateOrderNumberLabel();
-        statusConsumer.accept("Venta #" + String.format("%05d", currentOrder) + " finalizada (" + chargedAmount + ").");
-        afterActionFocusCallback.run();
+        receiptTask.setOnSucceeded(e -> Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Cobro Registrado");
+            alert.setHeaderText("Orden #" + String.format("%05d", currentOrder) + " cobrada exitosamente");
+            alert.setContentText("Folio: " + order.orderId() + "\nImporte total recibido: " + chargedAmount);
+            alert.showAndWait();
+
+            statusConsumer.accept("Venta #" + String.format("%05d", currentOrder) + " finalizada (" + chargedAmount + ").");
+            afterActionFocusCallback.run();
+        }));
+
+        receiptTask.setOnFailed(e -> Platform.runLater(() ->
+                statusConsumer.accept("Error al procesar recibo de cobro.")));
+
+        asyncExecutor.submit(receiptTask);
     }
 
     private void updateOrderNumberLabel() {
-        lblOrderNumber.setText(String.format("Orden #%05d", orderSequence));
+        int seq = cartService != null ? cartService.getCurrentOrderSequence() : 104;
+        lblOrderNumber.setText(String.format("Orden #%05d", seq));
     }
 
     private void initHeaderClock() {
-        Timeline clock = new Timeline(
+        headerClock = new Timeline(
                 new KeyFrame(Duration.ZERO, e -> lblOrderDate.setText(LocalDateTime.now().format(ORDER_DATE_FORMAT))),
                 new KeyFrame(Duration.seconds(30))
         );
-        clock.setCycleCount(Animation.INDEFINITE);
-        clock.play();
+        headerClock.setCycleCount(Animation.INDEFINITE);
+        headerClock.play();
+    }
+
+    /**
+     * Libera recursos activos (reloj Timeline, listeners y executor asíncrono) al cerrar la vista.
+     */
+    public void dispose() {
+        if (headerClock != null) {
+            headerClock.stop();
+        }
+        unbindCurrentCartService();
+        asyncExecutor.shutdownNow();
     }
 
     private Region createHorizontalDivider() {

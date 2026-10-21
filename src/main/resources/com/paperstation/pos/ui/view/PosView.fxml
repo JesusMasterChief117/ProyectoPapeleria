@@ -71,7 +71,6 @@
                             </StackPane>
                             <TextField fx:id="txtSearch"
                                        onAction="#onSearchAction"
-                                       onKeyTyped="#onSearchTextChanged"
                                        promptText="Buscar artículo..."
                                        styleClass="search-pill-field"
                                        HBox.hgrow="ALWAYS" />

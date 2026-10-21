@@ -63,9 +63,21 @@ public class PosController implements Initializable {
     // Panel izquierdo: carrito y cobro
     @FXML private CheckoutPanel checkoutPanel;
 
-    private final InventoryService inventoryService = new InventoryService();
-    private final CartService cartService = new CartService();
+    private final InventoryService inventoryService;
+    private final CartService cartService;
     private Category selectedCategory = Category.DESTACADOS;
+    private Timeline liveClock;
+
+    /** Constructor por defecto requerido por FXML si no se especifica ControllerFactory. */
+    public PosController() {
+        this(new InventoryService(), new CartService());
+    }
+
+    /** Constructor con inyección de dependencias para pruebas y configuración explícita. */
+    public PosController(InventoryService inventoryService, CartService cartService) {
+        this.inventoryService = inventoryService != null ? inventoryService : new InventoryService();
+        this.cartService = cartService != null ? cartService : new CartService();
+    }
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -82,11 +94,23 @@ public class PosController implements Initializable {
     }
 
     private void initLiveClock() {
-        Timeline clock = new Timeline(new KeyFrame(Duration.ZERO, e -> {
+        liveClock = new Timeline(new KeyFrame(Duration.ZERO, e -> {
             lblDateTime.setText(LocalDateTime.now().format(DATE_TIME_FORMAT));
         }), new KeyFrame(Duration.seconds(1)));
-        clock.setCycleCount(Animation.INDEFINITE);
-        clock.play();
+        liveClock.setCycleCount(Animation.INDEFINITE);
+        liveClock.play();
+    }
+
+    /**
+     * Detiene los temporizadores activos y libera recursos de los subcomponentes al cerrar la aplicación.
+     */
+    public void dispose() {
+        if (liveClock != null) {
+            liveClock.stop();
+        }
+        if (checkoutPanel != null) {
+            checkoutPanel.dispose();
+        }
     }
 
     private void initCheckoutPanel() {
