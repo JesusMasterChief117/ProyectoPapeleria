@@ -133,8 +133,53 @@
     -fx-background-color: -pos-bg-catalog;
 }
 
+.catalog-nav-wrapper {
+    -fx-background-color: transparent;
+}
+
+.catalog-top-nav {
+    -fx-padding: 0;
+}
+
+.catalog-tab-bar {
+    -fx-padding: 0;
+}
+
+/* Pestañas trapezoidales / asimétricas de alto contraste (inspiradas en separadores de archivo) */
+.catalog-tab {
+    -fx-shape: "M 0,40 L 6,4 Q 8,0 14,0 L 130,0 Q 137,0 141,6 L 156,40 Z";
+    -fx-scale-shape: true;
+    -fx-background-color: -pos-action-tool;
+    -fx-background-insets: 0;
+    -fx-text-fill: -pos-ink-on-brand-muted;
+    -fx-font-size: 13.5px;
+    -fx-font-weight: 700;
+    -fx-padding: 10px 28px 9px 22px;
+    -fx-cursor: hand;
+}
+
+.catalog-tab:hover {
+    -fx-background-color: -pos-action-tool-hover;
+    -fx-text-fill: -pos-ink-on-brand;
+}
+
+/* Pestaña activa destacada en rojo/coral de alto contraste */
+.catalog-tab-active,
+.catalog-tab-active:hover {
+    -fx-background-color: -pos-action-charge;
+    -fx-text-fill: -pos-ink-on-brand;
+}
+
+/* Riel inferior que ancla visualmente las pestañas trapezoidales */
+.catalog-tab-rail {
+    -fx-background-color: -pos-action-charge;
+    -fx-min-height: 2.5px;
+    -fx-pref-height: 2.5px;
+    -fx-max-height: 2.5px;
+}
+
 /* --------------------------------------------------------------------------
-   Redefinición del TextField de Búsqueda:
+   Redefinición del TextField de Búsqueda y Contenedor Pill:
    - Elimina por completo el brillo azul de foco nativo de JavaFX (focus ring).
    - Lo reemplaza por un borde sutil, nítido e intencional que comunica foco activo.
    -------------------------------------------------------------------------- */
@@ -164,171 +209,203 @@
     -fx-faint-focus-color: transparent;
 }
 
-/* Contenedor compuesto del escáner/buscador en el catálogo */
-.search-box {
+/* Barra de búsqueda con esquinas completamente redondeadas (Pill) */
+.search-pill-box {
     -fx-background-color: -pos-bg-surface;
-    -fx-background-radius: 6px;
-    -fx-border-color: -pos-action-tool;
-    -fx-border-radius: 6px;
-    -fx-border-width: 1px;
-    -fx-padding: 5px 8px 5px 12px;
+    -fx-background-radius: 999px;
+    -fx-border-color: -pos-border-strong;
+    -fx-border-radius: 999px;
+    -fx-border-width: 1.5px;
+    -fx-padding: 6px 14px 6px 16px;
+    -fx-min-width: 270px;
+    -fx-pref-width: 320px;
+    -fx-max-height: 38px;
+    -fx-translate-y: -5px;
 }
 
-.search-field,
-.search-field:focused {
+.search-pill-box:hover,
+.search-pill-box-focused {
+    -fx-border-color: -pos-ink-primary;
+    -fx-background-color: -pos-bg-surface;
+}
+
+.search-icon-wrapper {
+    -fx-min-width: 18px;
+    -fx-pref-width: 18px;
+}
+
+.search-pill-icon {
+    -fx-fill: transparent;
+    -fx-stroke: -pos-ink-secondary;
+    -fx-stroke-width: 2;
+    -fx-scale-x: 0.78;
+    -fx-scale-y: 0.78;
+}
+
+.search-pill-field,
+.search-pill-field:focused {
     -fx-background-color: transparent;
     -fx-background-insets: 0;
+    -fx-padding: 2px 0;
     -fx-font-size: 13.5px;
     -fx-font-weight: 500;
     -fx-text-fill: -pos-ink-primary;
     -fx-prompt-text-fill: -pos-ink-muted;
-    -fx-border-color: transparent transparent -pos-border-structural transparent;
-    -fx-border-width: 0 0 1px 0;
-    -fx-border-radius: 0;
+    -fx-border-width: 0;
     -fx-focus-color: transparent;
     -fx-faint-focus-color: transparent;
-    -fx-padding: 6px 4px;
 }
 
-.search-field:focused {
-    -fx-border-color: transparent transparent -pos-border-focus transparent;
-    -fx-border-width: 0 0 1.5px 0;
-}
-
-.btn-search-action {
-    -fx-background-color: -pos-action-tool;
-    -fx-text-fill: -pos-ink-on-brand;
-    -fx-font-size: 12.5px;
-    -fx-font-weight: 600;
-    -fx-padding: 7px 16px;
-    -fx-background-radius: 5px;
-    -fx-cursor: hand;
-    -fx-transition: -fx-background-color 140ms ease-out, -fx-scale-x 100ms ease-out, -fx-scale-y 100ms ease-out;
-}
-
-.btn-search-action:hover {
-    -fx-background-color: -pos-action-tool-hover;
-}
-
-.btn-search-action:pressed {
-    -fx-background-color: -pos-action-tool-pressed;
-    -fx-scale-x: 0.98;
-    -fx-scale-y: 0.98;
-}
-
-/* --------------------------------------------------------------------------
-   Barra de Categorías / Filtros de Inventario
-   -------------------------------------------------------------------------- */
-.categories-scroll {
-    -fx-background-color: transparent;
-    -fx-background: transparent;
-    -fx-border-width: 0;
-}
-
-.categories-scroll > .viewport {
-    -fx-background-color: transparent;
-}
-
-.category-bar-inner {
-    -fx-background-color: transparent;
-}
-
-.category-chip {
-    -fx-background-color: -pos-action-tool;
-    -fx-text-fill: -pos-ink-on-brand-muted;
-    -fx-font-size: 12.5px;
-    -fx-font-weight: 600;
-    -fx-padding: 6px 14px;
-    -fx-background-radius: 5px;
-    -fx-border-color: -pos-bg-catalog-deep;
-    -fx-border-radius: 5px;
-    -fx-border-width: 1px;
-    -fx-cursor: hand;
-    -fx-transition: -fx-background-color 140ms ease-out, -fx-border-color 140ms ease-out;
-}
-
-.category-chip:hover {
-    -fx-background-color: -pos-action-tool-hover;
-    -fx-text-fill: -pos-ink-on-brand;
-    -fx-border-color: -pos-ink-on-brand-muted;
-}
-
-.category-chip-active,
-.category-chip-active:hover {
-    -fx-background-color: -pos-bg-surface;
-    -fx-text-fill: -pos-action-tool;
-    -fx-border-color: -pos-bg-surface;
+.search-clear-btn {
+    -fx-background-color: -pos-bg-surface-subtle;
+    -fx-background-radius: 999px;
+    -fx-text-fill: -pos-ink-secondary;
+    -fx-font-size: 12px;
     -fx-font-weight: 700;
+    -fx-padding: 1px 6px;
+    -fx-min-width: 20px;
+    -fx-min-height: 20px;
+    -fx-cursor: hand;
+}
+
+.search-clear-btn:hover {
+    -fx-background-color: -pos-border-structural;
+    -fx-text-fill: -pos-ink-primary;
 }
 
 /* --------------------------------------------------------------------------
-   Cuadrícula y Tarjetas de Producto (Blanco Puro #FFFFFF sobre #1E60B5)
-   Transiciones suaves únicamente ante interacción directa (hover / clic).
+   Cuadrícula y Tarjetas de Producto (CatalogGrid + ProductCardNode)
+   Blanco Puro #FFFFFF sobre #1E60B5
    -------------------------------------------------------------------------- */
-.catalog-scroll {
+.catalog-grid-scroll {
     -fx-background-color: transparent;
     -fx-background: transparent;
     -fx-border-color: transparent;
+    -fx-border-width: 0;
+    -fx-padding: 0;
 }
 
-.catalog-scroll > .viewport {
+.catalog-grid-scroll > .viewport {
     -fx-background-color: transparent;
 }
 
-.catalog-flow-pane {
+.catalog-grid-scroll .scroll-bar:vertical {
+    -fx-background-color: transparent;
+    -fx-pref-width: 8px;
+}
+
+.catalog-grid-scroll .scroll-bar:vertical .track {
     -fx-background-color: transparent;
 }
 
-.product-card {
+.catalog-grid-scroll .scroll-bar:vertical .thumb {
+    -fx-background-color: -pos-ink-on-brand-muted;
+    -fx-background-radius: 999px;
+}
+
+.catalog-grid-scroll .scroll-bar:vertical .thumb:hover {
+    -fx-background-color: -pos-ink-on-brand;
+}
+
+.catalog-grid-scroll .scroll-bar:vertical .increment-button,
+.catalog-grid-scroll .scroll-bar:vertical .decrement-button {
+    -fx-padding: 0;
+    -fx-pref-height: 0;
+    -fx-opacity: 0;
+}
+
+.catalog-tile-pane {
+    -fx-background-color: transparent;
+}
+
+/* Tarjeta de producto (ProductCardNode): bloque blanco con bordes de 12px */
+.product-card-node {
     -fx-background-color: -pos-bg-surface;
-    -fx-background-radius: 6px;
-    -fx-border-color: -pos-action-tool;
-    -fx-border-radius: 6px;
+    -fx-background-radius: 12px;
+    -fx-border-color: -pos-border-structural;
+    -fx-border-radius: 12px;
     -fx-border-width: 1px;
-    -fx-padding: 12px 14px;
-    -fx-pref-width: 195px;
-    -fx-cursor: hand;
-    -fx-transition: -fx-border-color 140ms ease-out, -fx-translate-y 120ms ease-out, -fx-scale-x 90ms ease-out, -fx-scale-y 90ms ease-out;
 }
 
-.product-card:hover {
+.product-card-node:hover {
     -fx-background-color: -pos-bg-surface;
     -fx-border-color: -pos-action-cancel;
-    -fx-translate-y: -1.5px;
 }
 
-.product-card:pressed {
+.product-card-icon-badge {
     -fx-background-color: -pos-bg-surface-subtle;
-    -fx-border-color: -pos-action-tool;
-    -fx-translate-y: 0px;
-    -fx-scale-x: 0.985;
-    -fx-scale-y: 0.985;
+    -fx-background-radius: 8px;
 }
 
-/* Etiqueta de categoría en tarjeta: capitalización natural, sin "all caps" artificial */
-.product-card-category {
-    -fx-font-size: 11px;
-    -fx-text-fill: -pos-ink-secondary;
-    -fx-font-weight: 600;
+.product-card-icon-badge-cyber {
+    -fx-background-color: #FFF1F2;
+    -fx-background-radius: 8px;
 }
 
-.product-card-name {
-    -fx-font-size: 13px;
-    -fx-font-weight: 700;
-    -fx-text-fill: -pos-ink-primary;
-    -fx-pref-height: 38px;
-}
-
-.product-card-price {
-    -fx-font-size: 15.5px;
-    -fx-font-weight: 800;
-    -fx-text-fill: -pos-action-tool;
-}
-
-.product-card-stock {
+.product-card-sku {
     -fx-font-size: 11px;
     -fx-font-weight: 600;
     -fx-text-fill: -pos-ink-muted;
+}
+
+.product-card-title {
+    -fx-font-size: 14px;
+    -fx-font-weight: 700;
+    -fx-text-fill: -pos-ink-primary;
+    -fx-line-spacing: 1px;
+}
+
+.product-card-subtitle {
+    -fx-font-size: 12px;
+    -fx-font-weight: 400;
+    -fx-text-fill: -pos-ink-secondary;
+}
+
+.product-card-price {
+    -fx-font-size: 17px;
+    -fx-font-weight: 800;
+    -fx-text-fill: -pos-ink-primary;
+}
+
+/* Botón circular oscuro (+) en la esquina inferior derecha */
+.product-card-add-btn {
+    -fx-background-color: -pos-ink-primary;
+    -fx-background-radius: 999px;
+    -fx-border-radius: 999px;
+    -fx-padding: 0;
+    -fx-cursor: hand;
+}
+
+.product-card-add-btn:hover {
+    -fx-background-color: -pos-action-charge;
+}
+
+.product-card-add-btn:pressed {
+    -fx-background-color: -pos-action-charge-pressed;
+}
+
+/* Estado vacío de búsqueda en el catálogo */
+.catalog-empty-state {
+    -fx-background-color: transparent;
+}
+
+.catalog-empty-icon {
+    -fx-background-color: -pos-bg-surface;
+    -fx-background-radius: 999px;
+}
+
+.catalog-empty-title {
+    -fx-font-size: 15px;
+    -fx-font-weight: 700;
+    -fx-text-fill: -pos-ink-on-brand;
+}
+
+.catalog-empty-subtitle {
+    -fx-font-size: 12.5px;
+    -fx-font-weight: 400;
+    -fx-text-fill: -pos-ink-on-brand-muted;
+    -fx-text-alignment: CENTER;
+    -fx-max-width: 340px;
 }
 
 /* ==========================================================================
@@ -339,6 +416,10 @@
     -fx-background-color: -pos-bg-surface;
     -fx-border-color: -pos-action-tool;
     -fx-border-width: 0 2px 0 0;
+}
+
+.checkout-table-wrapper {
+    -fx-background-color: -pos-bg-surface;
 }
 
 /* --- Encabezado de Metadatos (Orden · Caja · Fecha) --- */
