@@ -13,7 +13,10 @@ import javafx.scene.shape.SVGPath;
 import javafx.scene.shape.StrokeLineCap;
 import javafx.scene.shape.StrokeLineJoin;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 /**
@@ -33,6 +36,7 @@ public class CatalogGrid extends ScrollPane {
 
     private final TilePane tilePane = new TilePane();
     private final VBox emptyStatePane;
+    private final Map<String, ProductCardNode> cardCache = new HashMap<>();
 
     public CatalogGrid() {
         getStyleClass().add("catalog-grid-scroll");
@@ -69,9 +73,8 @@ public class CatalogGrid extends ScrollPane {
      * @param onProductAdded callback invocado al pulsar una tarjeta o su botón circular {@code (+)}
      */
     public void setProducts(List<Product> products, Consumer<Product> onProductAdded) {
-        tilePane.getChildren().clear();
-
         if (products == null || products.isEmpty()) {
+            tilePane.getChildren().clear();
             setFitToHeight(true);
             setContent(emptyStatePane);
             return;
@@ -82,10 +85,16 @@ public class CatalogGrid extends ScrollPane {
             setContent(tilePane);
         }
 
+        List<ProductCardNode> visibleCards = new ArrayList<>(products.size());
         for (Product product : products) {
-            ProductCardNode cardNode = new ProductCardNode(product, onProductAdded);
-            tilePane.getChildren().add(cardNode);
+            ProductCardNode cardNode = cardCache.computeIfAbsent(
+                    product.id(),
+                    id -> new ProductCardNode(product, onProductAdded)
+            );
+            cardNode.setOnAdd(onProductAdded);
+            visibleCards.add(cardNode);
         }
+        tilePane.getChildren().setAll(visibleCards);
 
         if (getViewportBounds() != null && getViewportBounds().getWidth() > 0) {
             updateResponsiveColumns(getViewportBounds().getWidth());

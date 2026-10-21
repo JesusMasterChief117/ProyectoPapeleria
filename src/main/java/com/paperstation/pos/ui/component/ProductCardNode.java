@@ -2,6 +2,7 @@ package com.paperstation.pos.ui.component;
 
 import com.paperstation.pos.model.Category;
 import com.paperstation.pos.model.Product;
+import com.paperstation.pos.service.ReceiptFormatter;
 import javafx.animation.ScaleTransition;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -22,7 +23,6 @@ import javafx.scene.shape.StrokeLineCap;
 import javafx.scene.shape.StrokeLineJoin;
 import javafx.util.Duration;
 
-import java.text.NumberFormat;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -43,14 +43,12 @@ import java.util.function.Consumer;
  */
 public class ProductCardNode extends VBox {
 
-    private static final NumberFormat CURRENCY_FORMAT =
-            NumberFormat.getCurrencyInstance(Locale.of("es", "MX"));
-
     private final Product product;
     private final Button btnAdd;
+    private Consumer<Product> actionHandler;
 
-    // Sombras calibradas (reposo, elevación en hover y compresión en press)
-    private final DropShadow restingShadow = new DropShadow(
+    // Sombras calibradas compartidas (reposo, elevación en hover y compresión en press)
+    private static final DropShadow RESTING_SHADOW = new DropShadow(
             BlurType.GAUSSIAN,
             Color.rgb(15, 23, 42, 0.065),
             14.0,
@@ -59,7 +57,7 @@ public class ProductCardNode extends VBox {
             4.0
     );
 
-    private final DropShadow hoverShadow = new DropShadow(
+    private static final DropShadow HOVER_SHADOW = new DropShadow(
             BlurType.GAUSSIAN,
             Color.rgb(15, 23, 42, 0.12),
             20.0,
@@ -68,7 +66,7 @@ public class ProductCardNode extends VBox {
             7.0
     );
 
-    private final DropShadow pressedShadow = new DropShadow(
+    private static final DropShadow PRESSED_SHADOW = new DropShadow(
             BlurType.GAUSSIAN,
             Color.rgb(15, 23, 42, 0.045),
             8.0,
@@ -79,7 +77,7 @@ public class ProductCardNode extends VBox {
 
     public ProductCardNode(Product product, Consumer<Product> onAdd) {
         this.product = Objects.requireNonNull(product, "product");
-        Consumer<Product> actionHandler = onAdd != null ? onAdd : p -> {};
+        this.actionHandler = onAdd != null ? onAdd : p -> {};
 
         getStyleClass().add("product-card-node");
         setPadding(new Insets(16.0, 16.0, 14.0, 16.0));
@@ -90,7 +88,7 @@ public class ProductCardNode extends VBox {
         setPrefHeight(172.0);
         setMinHeight(168.0);
         setCursor(Cursor.HAND);
-        setEffect(restingShadow);
+        setEffect(RESTING_SHADOW);
 
         // 1. Fila superior: Ícono temático del artículo + código SKU discreto
         HBox topRow = buildTopMetaRow(product);
@@ -122,19 +120,24 @@ public class ProductCardNode extends VBox {
         footerRow.setAlignment(Pos.BOTTOM_LEFT);
         footerRow.setPadding(new Insets(4.0, 0, 0, 0));
 
-        Label lblPrice = new Label(CURRENCY_FORMAT.format(product.price()));
+        Label lblPrice = new Label(ReceiptFormatter.formatCurrency(product.price()));
         lblPrice.getStyleClass().add("product-card-price");
 
         Region footerSpacer = new Region();
         HBox.setHgrow(footerSpacer, Priority.ALWAYS);
 
-        this.btnAdd = buildCircularAddButton(actionHandler);
+        this.btnAdd = buildCircularAddButton();
 
         footerRow.getChildren().addAll(lblPrice, footerSpacer, btnAdd);
 
         getChildren().addAll(topRow, textBlock, verticalSpacer, footerRow);
 
-        setupInteractions(actionHandler);
+        setupInteractions();
+    }
+
+    /** Actualiza el callback invocado al pulsar la tarjeta o su botón de agregar. */
+    public void setOnAdd(Consumer<Product> onAdd) {
+        this.actionHandler = onAdd != null ? onAdd : p -> {};
     }
 
     private HBox buildTopMetaRow(Product item) {
@@ -179,7 +182,7 @@ public class ProductCardNode extends VBox {
         return badge;
     }
 
-    private Button buildCircularAddButton(Consumer<Product> actionHandler) {
+    private Button buildCircularAddButton() {
         SVGPath plusGlyph = new SVGPath();
         plusGlyph.setContent("M12 6v12M6 12h12");
         plusGlyph.setFill(Color.TRANSPARENT);
@@ -218,19 +221,19 @@ public class ProductCardNode extends VBox {
         return button;
     }
 
-    private void setupInteractions(Consumer<Product> actionHandler) {
-        setOnMouseEntered(e -> setEffect(hoverShadow));
+    private void setupInteractions() {
+        setOnMouseEntered(e -> setEffect(HOVER_SHADOW));
         setOnMouseExited(e -> {
-            setEffect(restingShadow);
+            setEffect(RESTING_SHADOW);
             setTranslateY(0.0);
         });
         setOnMousePressed(e -> {
-            setEffect(pressedShadow);
+            setEffect(PRESSED_SHADOW);
             setTranslateY(1.0);
             animateButtonScale(btnAdd, 0.93);
         });
         setOnMouseReleased(e -> {
-            setEffect(isHover() ? hoverShadow : restingShadow);
+            setEffect(isHover() ? HOVER_SHADOW : RESTING_SHADOW);
             setTranslateY(0.0);
             animateButtonScale(btnAdd, 1.0);
         });
